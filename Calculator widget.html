@@ -1,0 +1,168 @@
+<div style="font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 24px; color: #1f2937; line-height: 1.6;">
+    <h2 style="font-size: 1.5rem; font-weight: 700; color: #111827; margin-bottom: 12px;">📊 GoPayLater Campaign Performance Adjuster</h2>
+    <p style="margin-bottom: 24px; color: #4b5563;">
+        An interactive GoPayLater Campaign Adjuster has been updated below. The interactive simulation module now includes the monthly budget fields directly inside the control panel and data structure. You can now dynamically alter the budget split for Month 1, Month 2, and Month 3 to see how varying capital allocations immediately scale your activations, GTV, and downstream ROI trends.
+    </p>
+
+    <!-- Control Panel Layout -->
+    <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+        <h3 style="font-size: 1.1rem; font-weight: 600; margin-top: 0; margin-bottom: 16px; color: #374151;">🎛️ Campaign Control Panel</h3>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1-fraction)); gap: 20px; margin-bottom: 20px;">
+            <!-- Month 1 Budget -->
+            <div>
+                <label for="m1-budget" style="display: block; font-size: 0.875rem; font-weight: 500; color: #4b5563; margin-bottom: 6px;">Month 1 Budget (IDR)</label>
+                <input type="number" id="m1-budget" value="600000000" step="10000000" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;" oninput="calculateCampaign()">
+            </div>
+            <!-- Month 2 Budget -->
+            <div>
+                <label for="m2-budget" style="display: block; font-size: 0.875rem; font-weight: 500; color: #4b5563; margin-bottom: 6px;">Month 2 Budget (IDR)</label>
+                <input type="number" id="m2-budget" value="500000000" step="10000000" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;" oninput="calculateCampaign()">
+            </div>
+            <!-- Month 3 Budget -->
+            <div>
+                <label for="m3-budget" style="display: block; font-size: 0.875rem; font-weight: 500; color: #4b5563; margin-bottom: 6px;">Month 3 Budget (IDR)</label>
+                <input type="number" id="m3-budget" value="400000000" step="10000000" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;" oninput="calculateCampaign()">
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1-fraction)); gap: 20px;">
+            <!-- Acquisition vs Re-engagement Split Slider -->
+            <div>
+                <label for="strategy-split" style="display: block; font-size: 0.875rem; font-weight: 500; color: #4b5563; margin-bottom: 6px;">
+                    Acquisition Allocation: <span id="split-val" style="font-weight: 700; color: #008000;">80%</span>
+                </label>
+                <input type="range" id="strategy-split" min="50" max="100" value="80" style="width: 100%; accent-color: #008000;" oninput="calculateCampaign()">
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #9ca3af; margin-top: 4px;">
+                    <span>50% (Balanced)</span>
+                    <span>100% (Pure Acquisition)</span>
+                </div>
+            </div>
+            <!-- Liquidity Cost Input -->
+            <div>
+                <label for="liquidity-rate" style="display: block; font-size: 0.875rem; font-weight: 500; color: #4b5563; margin-bottom: 6px;">Liquidity / Funding Cost (%)</label>
+                <input type="number" id="liquidity-rate" value="1.5" step="0.1" min="0" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;" oninput="calculateCampaign()">
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Performance Metrics Table -->
+    <div style="overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+            <thead>
+                <tr style="background-color: #f3f4f6; border-bottom: 1px solid #e5e7eb;">
+                    <th style="padding: 12px 16px; font-weight: 600; color: #374151;">Metric Breakdown</th>
+                    <th style="padding: 12px 16px; font-weight: 600; color: #374151;">🗓️ Month 1</th>
+                    <th style="padding: 12px 16px; font-weight: 600; color: #374151;">🗓️ Month 2</th>
+                    <th style="padding: 12px 16px; font-weight: 600; color: #374151;">🗓️ Month 3</th>
+                    <th style="padding: 12px 16px; font-weight: 600; color: #111827; background-color: #eaeaea;">📈 Cumulative Total</th>
+                </tr>
+            </thead>
+            <tbody id="metrics-body">
+                <!-- Dynamic Content Generated via JS Script -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function formatIDR(num) {
+        if (num === 0) return "IDR 0";
+        return "IDR " + Math.round(num).toLocaleString('id-ID');
+    }
+
+    function calculateCampaign() {
+        // Read active values from inputs
+        const m1Budget = parseFloat(document.getElementById('m1-budget').value) || 0;
+        const m2Budget = parseFloat(document.getElementById('m2-budget').value) || 0;
+        const m3Budget = parseFloat(document.getElementById('m3-budget').value) || 0;
+        
+        const acqPct = parseFloat(document.getElementById('strategy-split').value) || 80;
+        const reEngPct = 100 - acqPct;
+        document.getElementById('split-val').innerText = acqPct + '%';
+
+        const liqRate = (parseFloat(document.getElementById('liquidity-rate').value) || 0) / 100;
+
+        // Constants based on business assumptions
+        const cac = 150000; 
+        const avgTicket = 250000;
+        const marginRate = 0.035; // Net Gross Margin Rate (3.5%)
+
+        // Calculations array per month
+        const budgets = [m1Budget, m2Budget, m3Budget];
+        const data = {
+            totalBudget:,
+            acqBudget:,
+            reBudget:,
+            approvedUsers:,
+            firstUse:,
+            repeatTrans:,
+            gtv:,
+            revenue:,
+            liqCost:,
+            netGain:,
+            roi: [0, 0, 0]
+        };
+
+        let cumulativeFirstUse = 0;
+
+        for (let i = 0; i < 3; i++) {
+            data.totalBudget[i] = budgets[i];
+            data.acqBudget[i] = budgets[i] * (acqPct / 100);
+            data.reBudget[i] = budgets[i] * (reEngPct / 100);
+
+            // User Funnel Mechanics
+            data.approvedUsers[i] = data.acqBudget[i] / (cac * 0.75); // Proxy conversion logic
+            data.firstUse[i] = data.acqBudget[i] / cac;
+
+            // Downstream Cohort Metrics (Repeat Engine)
+            if (i === 0) {
+                data.repeatTrans[i] = 0;
+            } else if (i === 1) {
+                // Driven by Month 1 users with a bump scaling from retention budget efficiency
+                data.repeatTrans[i] = data.firstUse[0] * 1.5 * (1 + (reEngPct / 100));
+            } else if (i === 2) {
+                // Compounded baseline retention curves
+                data.repeatTrans[i] = (data.firstUse[0] + data.firstUse[1]) * 1.8 * (1 + (reEngPct / 100));
+            }
+
+            // GTV & Financial Math
+            const freshGTV = data.firstUse[i] * avgTicket;
+            const repeatGTV = data.repeatTrans[i] * avgTicket;
+            data.gtv[i] = freshGTV + repeatGTV;
+
+            data.revenue[i] = data.gtv[i] * marginRate;
+            data.liqCost[i] = data.gtv[i] * liqRate;
+            data.netGain[i] = data.revenue[i] - data.totalBudget[i] - data.liqCost[i];
+            data.roi[i] = data.totalBudget[i] > 0 ? (data.netGain[i] / data.totalBudget[i]) * 100 : 0;
+        }
+
+        // Aggregate Totals
+        const sum = (arr) => arr.reduce((a, b) => a + b, 0);
+        const total_Budget = sum(data.totalBudget);
+        const total_Acq = sum(data.acqBudget);
+        const total_Re = sum(data.reBudget);
+        const total_Approved = sum(data.approvedUsers);
+        const total_FirstUse = sum(data.firstUse);
+        const total_Repeat = sum(data.repeatTrans);
+        const total_GTV = sum(data.gtv);
+        const total_Rev = sum(data.revenue);
+        const total_Liq = sum(data.liqCost);
+        const total_Net = sum(data.netGain);
+        const total_ROI = total_Budget > 0 ? (total_Net / total_Budget) * 100 : 0;
+
+        // Populate Table DOM elements dynamically
+        const tbody = document.getElementById('metrics-body');
+        tbody.innerHTML = `
+            <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 16px; font-weight: 600;">Total Campaign Budget</td>
+                <td style="padding: 12px 16px;">${formatIDR(data.totalBudget[0])}</td>
+                <td style="padding: 12px 16px;">${formatIDR(data.totalBudget[1])}</td>
+                <td style="padding: 12px 16px;">${formatIDR(data.totalBudget[2])}</td>
+                <td style="padding: 12px 16px; font-weight: 600; background-color: #f9fafb;">${formatIDR(total_Budget)}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #e5e7eb; color: #4b5563; font-size: 0.85rem; background-color: #fafafa;">
+                <td style="padding: 8px 16px; padding-left: 28px;">➡️ Acquisition Allocation</td>
+                <td style="padding: 8px 16px;">${formatIDR(data.acqBudget[0])}</td>
+                <td style="padding: 8px 16px;">${formatIDR(data.acqBudget[1])}</td>
+                <td style="padding: 8px 16px;">${formatIDR(data.acqBudget[2])}</td>
